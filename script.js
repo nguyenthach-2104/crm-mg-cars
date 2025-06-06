@@ -1,36 +1,56 @@
 let gapiInited = false;
+let gisInited = false;
 let currentUserEmail = null;
 
 function onLoad() {
-    gapi.load('client', initializeGapiClient);
+    gapi.load('client:auth2', initializeGapiClient);
 }
 
 async function initializeGapiClient() {
     try {
         await gapi.client.init({
             apiKey: CONFIG.apiKey,
+            clientId: CONFIG.clientId,
             discoveryDocs: CONFIG.discoveryDocs,
+            scope: CONFIG.scope
         });
         gapiInited = true;
+        gisInited = true;
         console.log('GAPI client khởi tạo thành công');
     } catch (error) {
         console.error('Lỗi khởi tạo GAPI client:', error);
     }
 }
 
-async function handleLogin() {
-    if (!gapiInited) {
+function handleAuthClick() {
+    if (gapiInited && gisInited) {
+        gapi.auth2.getAuthInstance().signIn().then(() => {
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            loadUserData();
+        }).catch(error => {
+            console.error('Lỗi đăng nhập:', error);
+            alert('Đăng nhập thất bại. Vui lòng thử lại.');
+        });
+    } else {
         alert('Hệ thống chưa sẵn sàng. Vui lòng chờ vài giây và thử lại.');
-        return;
     }
+}
 
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+function logout() {
+    gapi.auth2.getAuthInstance().signOut().then(() => {
+        currentUserEmail = null;
+        document.getElementById('auth').style.display = 'block';
+        document.getElementById('main').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'none';
+    });
+}
 
-    if (!email || !password) {
-        alert('Vui lòng điền email và mật khẩu.');
-        return;
-    }
+async function loadUserData() {
+    const user = gapi.auth2.getAuthInstance().currentUser.get();
+    const profile = user.getBasicProfile();
+    const email = profile.getEmail();
+    document.getElementById('userName').innerText = profile.getName();
 
     try {
         const response = await gapi.client.sheets.spreadsheets.values.get({
@@ -38,39 +58,23 @@ async function handleLogin() {
             range: 'Users!A2:G',
         });
         const users = response.result.values || [];
-        const user = users.find(row => row[2] === email && row[3] === password);
-
-        if (user) {
-            const [id, name, userEmail, userPassword, role, group, status] = user;
-            if (status !== 'Hoạt động') {
-                alert('Tài khoản không hoạt động. Vui lòng liên hệ quản trị viên.');
-                return;
-            }
+        const currentUser = users.find(row => row[2] === email);
+        if (currentUser) {
+            const [id, name, userEmail, password, role, group, status] = currentUser;
             currentUserEmail = email;
-            document.getElementById('auth').style.display = 'none';
-            document.getElementById('main').style.display = 'block';
-            document.getElementById('userName').innerText = name;
             document.getElementById('userRole').innerText = role;
             if (role === 'Quản trị viên') {
                 document.getElementById('adminPanel').style.display = 'block';
                 loadGroups();
             }
         } else {
-            alert('Email hoặc mật khẩu không đúng.');
+            alert('Không tìm thấy người dùng. Vui lòng liên hệ quản trị viên.');
+            logout();
         }
     } catch (error) {
-        console.error('Lỗi khi đăng nhập:', error);
-        alert('Lỗi khi đăng nhập. Vui lòng thử lại.');
+        console.error('Lỗi khi tải dữ liệu người dùng:', error);
+        alert('Lỗi khi tải dữ liệu. Vui lòng thử lại.');
     }
-}
-
-function logout() {
-    currentUserEmail = null;
-    document.getElementById('auth').style.display = 'block';
-    document.getElementById('main').style.display = 'none';
-    document.getElementById('adminPanel').style.display = 'none';
-    document.getElementById('loginEmail').value = '';
-    document.getElementById('loginPassword').value = '';
 }
 
 async function changePassword() {
