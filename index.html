@@ -12,15 +12,24 @@
 <body>
     <h1>CRM - Quản Lý Nhân Viên & Bán Hàng Xe MG</h1>
     <div id="auth">
-        <button onclick="handleAuthClick()">Đăng Nhập Với Google</button>
+        <h3>Đăng Nhập</h3>
+        <input id="loginEmail" type="email" placeholder="Email (Gmail)">
+        <input id="loginPassword" type="password" placeholder="Mật khẩu">
+        <button onclick="handleLogin()">Đăng Nhập</button>
     </div>
     <div id="main" style="display: none;">
         <h2>Chào mừng, <span id="userName"></span>!</h2>
         <p>Vai trò: <span id="userRole"></span></p>
+        <button onclick="logout()">Đăng Xuất</button>
+        <h3>Đổi Mật Khẩu</h3>
+        <input id="currentPassword" type="password" placeholder="Mật khẩu hiện tại">
+        <input id="newPassword" type="password" placeholder="Mật khẩu mới">
+        <button onclick="changePassword()">Đổi Mật Khẩu</button>
         <div id="adminPanel" style="display: none;">
             <h3>Quản Trị Viên</h3>
             <input id="newUserName" placeholder="Tên người dùng">
-            <input id="newUserEmail" placeholder="Email">
+            <input id="newUserEmail" placeholder="Email (Gmail)">
+            <input id="newUserPassword" type="password" placeholder="Mật khẩu">
             <select id="newUserRole">
                 <option value="Quản trị viên">Quản trị viên</option>
                 <option value="Trưởng nhóm">Trưởng nhóm</option>
@@ -28,7 +37,14 @@
             </select>
             <input id="newUserGroup" placeholder="Nhóm">
             <button onclick="createUser()">Tạo Người Dùng</button>
+            <h3>Quản Lý Nhóm</h3>
+            <input id="newGroupName" placeholder="Tên nhóm">
+            <input id="newGroupLeader" placeholder="Email Trưởng nhóm">
+            <input id="newGroupDeputy" placeholder="Email Phó nhóm">
+            <button onclick="createGroup()">Tạo Nhóm</button>
+            <div id="groupList"></div>
         </div>
     </div>
 </body>
 </html>
+<!-- Buộc rebuild GitHub Pages -->
