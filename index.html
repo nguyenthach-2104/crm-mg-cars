@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM - Quản Lý Xe MG</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <h1>CRM - Quản Lý Nhân Viên & Bán Hàng Xe MG</h1>
+    <div id="auth">
+        <button onclick="handleAuthClick()">Đăng Nhập Với Google</button>
+    </div>
+    <div id="main" style="display: none;">
+        <h2>Chào mừng, <span id="userName"></span>!</h2>
+        <p>Vai trò: <span id="userRole"></span></p>
+        <div id="adminPanel" style="display: none;">
+            <h3>Quản Trị Viên</h3>
+            <input id="newUserName" placeholder="Tên người dùng">
+            <input id="newUserEmail" placeholder="Email">
+            <select id="newUserRole">
+                <option value="Quản trị viên">Quản trị viên</option>
+                <option value="Trưởng nhóm">Trưởng nhóm</option>
+                <option value="Nhân viên">Nhân viên</option>
+            </select>
+            <input id="newUserGroup" placeholder="Nhóm">
+            <button onclick="createUser()">Tạo Người Dùng</button>
+        </div>
+    </div>
+</body>
+</html>
