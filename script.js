@@ -17,6 +17,10 @@ async function initializeGapiClient() {
         gapiInited = true;
         gisInited = true;
         console.log('GAPI client khởi tạo thành công');
+        // Kiểm tra trạng thái đăng nhập
+        if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
+            handleAuthClick();
+        }
     } catch (error) {
         console.error('Lỗi khởi tạo GAPI client:', error);
     }
@@ -25,32 +29,31 @@ async function initializeGapiClient() {
 function handleAuthClick() {
     if (gapiInited && gisInited) {
         gapi.auth2.getAuthInstance().signIn().then(() => {
-            document.getElementById('auth').style.display = 'none';
-            document.getElementById('main').style.display = 'block';
-            loadUserData();
+            // Sau khi đăng nhập Google, hiển thị form đăng nhập username
+            console.log('Đăng nhập Google thành công để truy cập API');
         }).catch(error => {
-            console.error('Lỗi đăng nhập:', error);
-            alert('Đăng nhập thất bại. Vui lòng thử lại.');
+            console.error('Lỗi đăng nhập Google:', error);
+            alert('Đăng nhập Google thất bại. Vui lòng thử lại.');
         });
     } else {
         alert('Hệ thống chưa sẵn sàng. Vui lòng chờ vài giây và thử lại.');
     }
 }
 
-function logout() {
-    gapi.auth2.getAuthInstance().signOut().then(() => {
-        currentUserEmail = null;
-        document.getElementById('auth').style.display = 'block';
-        document.getElementById('main').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'none';
-    });
-}
+async function handleLogin() {
+    if (!gapiInited || !gisInited || !gapi.auth2.getAuthInstance().isSignedIn.get()) {
+        alert('Vui lòng đăng nhập Google trước để truy cập hệ thống.');
+        handleAuthClick();
+        return;
+    }
 
-async function loadUserData() {
-    const user = gapi.auth2.getAuthInstance().currentUser.get();
-    const profile = user.getBasicProfile();
-    const email = profile.getEmail();
-    document.getElementById('userName').innerText = profile.getName();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    if (!email || !password) {
+        alert('Vui lòng điền email và mật khẩu.');
+        return;
+    }
 
     try {
         const response = await gapi.client.sheets.spreadsheets.values.get({
@@ -58,23 +61,41 @@ async function loadUserData() {
             range: 'Users!A2:G',
         });
         const users = response.result.values || [];
-        const currentUser = users.find(row => row[2] === email);
-        if (currentUser) {
-            const [id, name, userEmail, password, role, group, status] = currentUser;
+        const user = users.find(row => row[2] === email && row[3] === password);
+
+        if (user) {
+            const [id, name, userEmail, userPassword, role, group, status] = user;
+            if (status !== 'Hoạt động') {
+                alert('Tài khoản không hoạt động. Vui lòng liên hệ quản trị viên.');
+                return;
+            }
             currentUserEmail = email;
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            document.getElementById('userName').innerText = name;
             document.getElementById('userRole').innerText = role;
             if (role === 'Quản trị viên') {
                 document.getElementById('adminPanel').style.display = 'block';
                 loadGroups();
             }
         } else {
-            alert('Không tìm thấy người dùng. Vui lòng liên hệ quản trị viên.');
-            logout();
+            alert('Email hoặc mật khẩu không đúng.');
         }
     } catch (error) {
-        console.error('Lỗi khi tải dữ liệu người dùng:', error);
-        alert('Lỗi khi tải dữ liệu. Vui lòng thử lại.');
+        console.error('Lỗi khi đăng nhập:', error);
+        alert('Lỗi khi đăng nhập. Vui lòng thử lại.');
     }
+}
+
+function logout() {
+    currentUserEmail = null;
+    gapi.auth2.getAuthInstance().signOut().then(() => {
+        document.getElementById('auth').style.display = 'block';
+        document.getElementById('main').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('loginEmail').value = '';
+        document.getElementById('loginPassword').value = '';
+    });
 }
 
 async function changePassword() {

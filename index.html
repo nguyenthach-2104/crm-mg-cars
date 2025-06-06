@@ -12,7 +12,10 @@
 <body>
     <h1>CRM - Quản Lý Nhân Viên & Bán Hàng Xe MG</h1>
     <div id="auth">
-        <button onclick="handleAuthClick()">Đăng Nhập Với Google</button>
+        <h3>Đăng Nhập</h3>
+        <input id="loginEmail" type="email" placeholder="Email (Gmail)">
+        <input id="loginPassword" type="password" placeholder="Mật khẩu">
+        <button onclick="handleLogin()">Đăng Nhập</button>
     </div>
     <div id="main" style="display: none;">
         <h2>Chào mừng, <span id="userName"></span>!</h2>
@@ -44,4 +47,3 @@
     </div>
 </body>
 </html>
-<!-- Buộc rebuild GitHub Pages -->
