@@ -1,49 +1,26 @@
 let gapiInited = false;
-let gisInited = false;
 let currentUserEmail = null;
 
 function onLoad() {
-    gapi.load('client:auth2', initializeGapiClient);
+    gapi.load('client', initializeGapiClient);
 }
 
 async function initializeGapiClient() {
     try {
         await gapi.client.init({
             apiKey: CONFIG.apiKey,
-            clientId: CONFIG.clientId,
             discoveryDocs: CONFIG.discoveryDocs,
-            scope: CONFIG.scope
         });
         gapiInited = true;
-        gisInited = true;
         console.log('GAPI client khởi tạo thành công');
-        // Kiểm tra trạng thái đăng nhập
-        if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
-            handleAuthClick();
-        }
     } catch (error) {
         console.error('Lỗi khởi tạo GAPI client:', error);
     }
 }
 
-function handleAuthClick() {
-    if (gapiInited && gisInited) {
-        gapi.auth2.getAuthInstance().signIn().then(() => {
-            // Sau khi đăng nhập Google, hiển thị form đăng nhập username
-            console.log('Đăng nhập Google thành công để truy cập API');
-        }).catch(error => {
-            console.error('Lỗi đăng nhập Google:', error);
-            alert('Đăng nhập Google thất bại. Vui lòng thử lại.');
-        });
-    } else {
-        alert('Hệ thống chưa sẵn sàng. Vui lòng chờ vài giây và thử lại.');
-    }
-}
-
 async function handleLogin() {
-    if (!gapiInited || !gisInited || !gapi.auth2.getAuthInstance().isSignedIn.get()) {
-        alert('Vui lòng đăng nhập Google trước để truy cập hệ thống.');
-        handleAuthClick();
+    if (!gapiInited) {
+        alert('Hệ thống chưa sẵn sàng. Vui lòng chờ vài giây và thử lại.');
         return;
     }
 
@@ -89,128 +66,19 @@ async function handleLogin() {
 
 function logout() {
     currentUserEmail = null;
-    gapi.auth2.getAuthInstance().signOut().then(() => {
-        document.getElementById('auth').style.display = 'block';
-        document.getElementById('main').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'none';
-        document.getElementById('loginEmail').value = '';
-        document.getElementById('loginPassword').value = '';
-    });
-}
-
-async function changePassword() {
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-
-    if (!currentPassword || !newPassword) {
-        alert('Vui lòng điền mật khẩu hiện tại và mật khẩu mới.');
-        return;
-    }
-
-    try {
-        const response = await gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: CONFIG.spreadsheetId,
-            range: 'Users!A2:G',
-        });
-        const users = response.result.values || [];
-        const userIndex = users.findIndex(row => row[2] === currentUserEmail);
-
-        if (userIndex === -1) {
-            alert('Không tìm thấy người dùng.');
-            return;
-        }
-
-        const user = users[userIndex];
-        if (user[3] !== currentPassword) {
-            alert('Mật khẩu hiện tại không đúng.');
-            return;
-        }
-
-        users[userIndex][3] = newPassword;
-
-        await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: CONFIG.spreadsheetId,
-            range: `Users!A${userIndex + 2}:G${userIndex + 2}`,
-            valueInputOption: 'RAW',
-            resource: {
-                values: [users[userIndex]]
-            }
-        });
-
-        alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
-        document.getElementById('currentPassword').value = '';
-        document.getElementById('newPassword').value = '';
-        logout();
-    } catch (error) {
-        console.error('Lỗi khi đổi mật khẩu:', error);
-        alert('Lỗi khi đổi mật khẩu. Vui lòng thử lại.');
-    }
+    document.getElementById('auth').style.display = 'block';
+    document.getElementById('main').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
 }
 
 async function createUser() {
-    const name = document.getElementById('newUserName').value;
-    const email = document.getElementById('newUserEmail').value;
-    const password = document.getElementById('newUserPassword').value;
-    const role = document.getElementById('newUserRole').value;
-    const group = document.getElementById('newUserGroup').value;
-    const id = Date.now().toString();
-
-    if (!name || !email || !password || !role || !group) {
-        alert('Vui lòng điền đầy đủ thông tin.');
-        return;
-    }
-
-    try {
-        await gapi.client.sheets.spreadsheets.values.append({
-            spreadsheetId: CONFIG.spreadsheetId,
-            range: 'Users!A2:G',
-            valueInputOption: 'RAW',
-            insertDataOption: 'INSERT_ROWS',
-            resource: {
-                values: [[id, name, email, password, role, group, 'Hoạt động']]
-            }
-        });
-        alert('Tạo người dùng thành công!');
-        document.getElementById('newUserName').value = '';
-        document.getElementById('newUserEmail').value = '';
-        document.getElementById('newUserPassword').value = '';
-        document.getElementById('newUserGroup').value = '';
-    } catch (error) {
-        console.error('Lỗi khi tạo người dùng:', error);
-        alert('Lỗi khi tạo người dùng. Vui lòng thử lại.');
-    }
+    alert('Chức năng tạo người dùng tạm thời bị vô hiệu hóa vì không thể ghi dữ liệu trong phiên bản này. Vui lòng thêm người dùng trực tiếp vào Google Sheets.');
 }
 
 async function createGroup() {
-    const groupName = document.getElementById('newGroupName').value;
-    const leaderEmail = document.getElementById('newGroupLeader').value;
-    const deputyEmail = document.getElementById('newGroupDeputy').value;
-    const groupId = Date.now().toString();
-
-    if (!groupName || !leaderEmail) {
-        alert('Vui lòng điền đầy đủ tên nhóm và email trưởng nhóm.');
-        return;
-    }
-
-    try {
-        await gapi.client.sheets.spreadsheets.values.append({
-            spreadsheetId: CONFIG.spreadsheetId,
-            range: 'Groups!A2:E',
-            valueInputOption: 'RAW',
-            insertDataOption: 'INSERT_ROWS',
-            resource: {
-                values: [[groupId, groupName, leaderEmail, deputyEmail || '', 'Hoạt động']]
-            }
-        });
-        alert('Tạo nhóm thành công!');
-        document.getElementById('newGroupName').value = '';
-        document.getElementById('newGroupLeader').value = '';
-        document.getElementById('newGroupDeputy').value = '';
-        loadGroups();
-    } catch (error) {
-        console.error('Lỗi khi tạo nhóm:', error);
-        alert('Lỗi khi tạo nhóm. Vui lòng thử lại.');
-    }
+    alert('Chức năng tạo nhóm tạm thời bị vô hiệu hóa vì không thể ghi dữ liệu trong phiên bản này. Vui lòng thêm nhóm trực tiếp vào Google Sheets.');
 }
 
 async function loadGroups() {
